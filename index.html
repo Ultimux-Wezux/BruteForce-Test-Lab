@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BruteForce Test Lab</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231a1a2e' stroke='%2300e676' stroke-width='4'/><text x='50' y='72' font-size='65' text-anchor='middle'>🔑</text></svg>">
+    <style>
+        :root {
+            --bg: #06060b;
+            --surface: #0d0d18;
+            --surface2: #111122;
+            --surface3: #16162a;
+            --border: #1e1e3a;
+            --text: #c8c8d4;
+            --text-muted: #7a7a94;
+            --accent: #00e676;
+            --accent-glow: #00e67666;
+            --danger: #ff3d5a;
+            --danger-glow: #ff3d5a55;
+            --warning: #ffab00;
+            --warning-glow: #ffab0055;
+            --info: #448aff;
+            --info-glow: #448aff55;
+            --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+            --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            --radius: 10px;
+            --radius-sm: 6px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-image:
+                radial-gradient(ellipse at 50% 0%, #0a1a1a 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 100%, #0d0d25 0%, transparent 50%),
+                radial-gradient(ellipse at 20% 80%, #0a0a18 0%, transparent 50%);
+            background-attachment: fixed;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+        }
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1100px;
+            padding: 20px 24px 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 4px 0;
+        }
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-sm);
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+        .header h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #e8e8f0;
+            line-height: 1.2;
+        }
+        .header h1 span {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+        .badge .pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse-dot 1.8s infinite;
+        }
+        @keyframes pulse-dot {
+            0%,100% { box-shadow: 0 0 4px var(--accent), 0 0 8px var(--accent); }
+            50% { box-shadow: 0 0 12px var(--accent), 0 0 24px var(--accent); }
+        }
+        .difficulty-bar {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .diff-btn {
+            padding: 8px 18px;
+            border-radius: 22px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+        .diff-btn:hover {
+            border-color: #ffffff30;
+            color: #d0d0dc;
+            background: var(--surface3);
+        }
+        .diff-btn.active {
+            background: var(--surface3);
+            font-weight: 600;
+        }
+        .diff-btn.active.easy { border-color: #00e676; color: #00e676; box-shadow: 0 0 18px #00e67644; }
+        .diff-btn.active.medium { border-color: #ffab00; color: #ffab00; box-shadow: 0 0 18px #ffab0044; }
+        .diff-btn.active.hard { border-color: #ff6d3a; color: #ff6d3a; box-shadow: 0 0 18px #ff6d3a44; }
+        .diff-btn.active.expert { border-color: #ff3d5a; color: #ff3d5a; box-shadow: 0 0 18px #ff3d5a44; }
+        .randomize-btn {
+            margin-left: auto;
+            padding: 8px 18px;
+            border-radius: 22px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: #ccc;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.82rem;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+        .randomize-btn:hover {
+            border-color: #ffffff50;
+            background: var(--surface3);
+            color: #fff;
+        }
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px 24px;
+            box-shadow: 0 0 30px #00e67615, 0 0 60px #00e67608;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #ffffff10, transparent);
+            pointer-events: none;
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .card-header h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .input-group label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        .input-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .input-row input {
+            flex: 1;
+            padding: 11px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: #e0e0ea;
+            font-size: 0.95rem;
+            font-family: var(--font-mono);
+            outline: none;
+            transition: var(--transition);
+        }
+        .input-row input:focus {
+            border-color: #ffffff40;
+            box-shadow: 0 0 0 3px #ffffff06;
+            background: var(--surface3);
+        }
+        .input-row input.error-shake {
+            animation: shake 0.45s ease;
+            border-color: var(--danger) !important;
+            box-shadow: 0 0 14px var(--danger-glow) !important;
+        }
+        .input-row input.success-glow {
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 20px var(--accent-glow) !important;
+        }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            15% { transform: translateX(-8px); }
+            30% { transform: translateX(8px); }
+            45% { transform: translateX(-6px); }
+            60% { transform: translateX(5px); }
+            75% { transform: translateX(-3px); }
+            90% { transform: translateX(2px); }
+        }
+        .btn {
+            padding: 11px 20px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.88rem;
+            cursor: pointer;
+            border: none;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+        .btn-primary:hover { box-shadow: 0 6px 28px var(--accent-glow); transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .btn-outline:hover { border-color: #ffffff40; background: var(--surface3); }
+        .btn-sm { padding: 6px 12px; font-size: 0.72rem; border-radius: 16px; }
+        .cooldown-bar {
+            height: 4px;
+            border-radius: 2px;
+            background: var(--surface2);
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .cooldown-bar-fill {
+            height: 100%;
+            background: var(--warning);
+            border-radius: 2px;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 8px var(--warning-glow);
+        }
+        .cooldown-text {
+            font-size: 0.7rem;
+            color: var(--warning);
+            font-weight: 500;
+            text-align: center;
+            margin-top: 2px;
+        }
+        .hash-display {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            word-break: break-all;
+            color: #b0b0c8;
+            position: relative;
+            user-select: all;
+        }
+        .hash-display .hash-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            display: block;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--surface3);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 4px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.68rem;
+            transition: var(--transition);
+        }
+        .copy-btn:hover { color: #fff; border-color: #ffffff40; }
+        .copy-btn.copied { color: var(--accent); border-color: var(--accent); }
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .stat-box {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+        .stat-value.danger { color: var(--danger); }
+        .stat-value.warning { color: var(--warning); }
+        .stat-value.success { color: var(--accent); }
+        .stat-value.info { color: var(--info); }
+        .stat-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .terminal {
+            background: #020208;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            max-height: 320px;
+            display: flex;
+            flex-direction: column;
+        }
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--surface2);
+            border-bottom: 1px solid var(--border);
+        }
+        .terminal-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .terminal-dot.red { background: #ff5f57; }
+        .terminal-dot.yellow { background: #febc2e; }
+        .terminal-dot.green { background: #28c840; }
+        .terminal-title {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            letter-spacing: 0.04em;
+            margin-left: 6px;
+        }
+        .terminal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px 16px;
+            font-family: var(--font-mono);
+            font-size: 0.73rem;
+            line-height: 1.7;
+            color: #a0a0b8;
+            scroll-behavior: smooth;
+        }
+        .terminal-body .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid #ffffff03;
+            animation: fadeInLog 0.25s ease;
+        }
+        @keyframes fadeInLog {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .log-entry .timestamp { color: #555; }
+        .log-entry .status-401 { color: #ff8a80; }
+        .log-entry .status-429 { color: #ffab00; }
+        .log-entry .status-200 { color: #00e676; font-weight: 700; }
+        .terminal-body .empty-log { color: #333; font-style: italic; }
+        .terminal-body::-webkit-scrollbar { width: 4px; }
+        .terminal-body::-webkit-scrollbar-track { background: transparent; }
+        .terminal-body::-webkit-scrollbar-thumb { background: #ffffff10; border-radius: 2px; }
+        .attack-panel textarea {
+            width: 100%;
+            height: 120px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: #ccc;
+            font-family: var(--font-mono);
+            padding: 10px;
+            border-radius: 6px;
+            resize: vertical;
+        }
+        .progress-bar {
+            height: 6px;
+            background: var(--surface2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.2s;
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            z-index: 999;
+            pointer-events: none;
+            box-shadow: 0 8px 30px #00000060;
+            animation: toastIn 0.35s ease, toastOut 0.35s ease 2.2s forwards;
+        }
+        .toast.success { background: #0d2b0d; border: 1px solid #00e67655; color: #00e676; }
+        .toast.error { background: #2b0d0d; border: 1px solid #ff3d5a55; color: #ff8a80; }
+        .toast.warning { background: #2b1d0d; border: 1px solid #ffab0055; color: #ffab00; }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        @keyframes toastOut {
+            from { opacity: 1; }
+            to { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+        }
+        .flash-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 99;
+            background: radial-gradient(circle, #00e67622 0%, transparent 70%);
+            animation: flashPulse 0.8s ease-out forwards;
+            opacity: 0;
+        }
+        @keyframes flashPulse {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        .api-info {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 22px;
+            font-family: var(--font-mono);
+            font-size: 0.73rem;
+            line-height: 1.7;
+            color: #b0b0c8;
+        }
+        .api-info .method {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-weight: 700;
+            font-size: 0.68rem;
+            margin-right: 6px;
+            background: #448aff22;
+            color: #448aff;
+            border: 1px solid #448aff44;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 12px 10px 30px; gap: 14px; }
+            .header { flex-direction: column; align-items: flex-start; }
+            .difficulty-bar { width: 100%; }
+            .randomize-btn { margin-left: 0; }
+            .diff-btn { padding: 6px 13px; font-size: 0.74rem; }
+            .stats-row { gap: 8px; }
+            .stat-value { font-size: 1.4rem; }
+            .terminal { max-height: 240px; }
+            .card { padding: 16px 14px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-brand">
+            <div class="logo-icon">🔑</div>
+            <h1>BruteForce Test Lab<span>Password Cracker Sandbox</span></h1>
+        </div>
+        <div class="badge"><span class="pulse-dot"></span> Simulation Active</div>
+    </div>
+
+    <div class="difficulty-bar" id="difficultyBar">
+        <button class="diff-btn active easy" data-level="easy">🟢 Easy</button>
+        <button class="diff-btn medium" data-level="medium">🟡 Medium</button>
+        <button class="diff-btn hard" data-level="hard">🟠 Hard</button>
+        <button class="diff-btn expert" data-level="expert">🔴 Expert</button>
+        <button class="randomize-btn" id="randomizeBtn">🎲 Randomize Target</button>
+    </div>
+
+    <div class="main-grid">
+        <div class="card">
+            <div class="card-header">🔑<h3>Simulated Login</h3></div>
+            <form class="login-form" id="loginForm" autocomplete="off">
+                <div class="input-group">
+                    <label>Username</label>
+                    <div class="input-row">
+                        <input type="text" value="admin" readonly style="opacity:0.7;cursor:default;">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Password (target to crack)</label>
+                    <div class="input-row">
+                        <input type="password" id="passwordInput" placeholder="Enter password attempt..." autofocus>
+                        <button type="button" class="btn btn-outline btn-sm" id="togglePassword" title="Show/Hide">👁</button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="submitBtn">⚡ Attempt Login</button>
+                <div class="cooldown-bar" id="cooldownBar" style="display:none;">
+                    <div class="cooldown-bar-fill" id="cooldownFill" style="width:100%;"></div>
+                </div>
+                <div class="cooldown-text" id="cooldownText" style="display:none;"></div>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header">📊<h3>Target Info & Stats</h3></div>
+            <div class="stats-row">
+                <div class="stat-box"><div class="stat-value info" id="statAttempts">0</div><div class="stat-label">Total Attempts</div></div>
+                <div class="stat-box"><div class="stat-value warning" id="statFailures">0</div><div class="stat-label">Failures</div></div>
+                <div class="stat-box"><div class="stat-value danger" id="statBlocked">0</div><div class="stat-label">Blocks/Rate Limits</div></div>
+                <div class="stat-box"><div class="stat-value success" id="statSuccess">—</div><div class="stat-label">Cracked?</div></div>
+            </div>
+            <div style="margin-top:16px;">
+                <div class="hash-display" id="hashDisplay">
+                    <span class="hash-label">SHA-256 Hash (target password)</span>
+                    <span id="hashValue">Computing...</span>
+                    <button class="copy-btn" id="copyHashBtn" title="Copy hash">📋 Copy</button>
+                </div>
+            </div>
+            <p style="font-size:0.68rem;color:var(--text-muted);margin-top:8px;">
+                💡 Copy the hash to test with <strong>hashcat</strong>, <strong>John the Ripper</strong>, or custom tools.
+            </p>
+        </div>
+    </div>
+
+    <div class="terminal" id="terminal">
+        <div class="terminal-header">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title">Attempt Log — Live</span>
+            <button class="btn btn-outline btn-sm" id="clearLogBtn" style="margin-left:auto;">Clear</button>
+        </div>
+        <div class="terminal-body" id="terminalBody">
+            <div class="empty-log">[System] Awaiting connection... Target password hash computed. Ready for testing.</div>
+        </div>
+    </div>
+
+    <div class="api-info">
+        <strong style="color:#e0e0ea;">📡 Simulated API Endpoint</strong>
+        <p style="margin:6px 0 2px;">
+            <span class="method">POST</span>
+            <span style="color:#00e676;font-weight:600;">/api/login</span>
+        </p>
+        <pre style="background:#020208;padding:12px 16px;border-radius:6px;overflow-x:auto;border:1px solid var(--border);color:#ccc;font-size:0.7rem;margin:8px 0;">curl -X POST http://localhost:3000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"<b>ATTEMPT</b>"}'</pre>
+        <p style="font-size:0.68rem;color:var(--text-muted);">
+            <strong>Responses:</strong><br>
+            <span style="color:#00e676;">200</span> — <code>{"success":true,"message":"Login successful","token":"jwt..."}</code><br>
+            <span style="color:#ff8a80;">401</span> — <code>{"success":false,"message":"Invalid credentials"}</code><br>
+            <span style="color:#ffab00;">429</span> — <code>{"success":false,"message":"Rate limited. Retry in Xs"}</code>
+        </p>
+    </div>
+
+    <div class="card attack-panel">
+        <div class="card-header">🤖<h3>Automatic Brute‑Force Tool</h3></div>
+        <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;">
+            Paste a list of passwords (one per line) or use the expanded built‑in wordlist.
+        </p>
+        <textarea id="wordlistInput" placeholder="password123&#10;admin2023&#10;qwerty99&#10;letmein1&#10;..."></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;">
+            <button class="btn btn-primary" id="startAttackBtn">▶ Start Attack</button>
+            <button class="btn btn-outline" id="stopAttackBtn" disabled>⏹ Stop</button>
+            <span style="font-size:0.8rem;color:var(--text-muted);" id="progressText">0 / 0</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div style="font-size:0.7rem;color:var(--text-muted);" id="attackStatus">Idle</div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const DIFFICULTY_CONFIG = {
+        easy:   { label:'Easy',   rateLimitThreshold:8, cooldownSeconds:5,  maxCooldown:15 },
+        medium: { label:'Medium', rateLimitThreshold:6, cooldownSeconds:10, maxCooldown:30 },
+        hard:   { label:'Hard',   rateLimitThreshold:4, cooldownSeconds:15, maxCooldown:45 },
+        expert: { label:'Expert', rateLimitThreshold:3, cooldownSeconds:20, maxCooldown:60 },
+    };
+
+    function generatePassword(level) {
+        const rand = (max) => crypto.getRandomValues(new Uint32Array(1))[0] % max;
+        const pick = (arr) => arr[rand(arr.length)];
+        if (level === 'easy') return pick(['password123','admin2023','qwerty99','letmein1','welcome1','12345678','summer2024','pass1234','hello123','monkey12','abc12345','test123','changeme','secret123','iloveyou']);
+        if (level === 'medium') {
+            let w = pick(['troubador','security','monitor','explorer','gateway','phantom','crystal','soldier']);
+            w = w.charAt(0).toUpperCase() + w.slice(1);
+            return w + rand(10) + pick('!@#$%&*');
+        }
+        const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+';
+        let pwd = '';
+        const len = level === 'hard' ? 12 : 18;
+        for (let i=0; i<len; i++) pwd += pick(chars);
+        return pwd;
+    }
+
+    let currentLevel = 'easy';
+    let config = { ...DIFFICULTY_CONFIG[currentLevel], password: generatePassword(currentLevel) };
+    let attemptCount = 0, failureCount = 0, blockCount = 0, isCracked = false;
+    let cooldownUntil = null, cooldownTimer = null, targetHash = '';
+
+    const diffBtns = document.querySelectorAll('.diff-btn');
+    const passwordInput = document.getElementById('passwordInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const toggleBtn = document.getElementById('togglePassword');
+    const cooldownBar = document.getElementById('cooldownBar');
+    const cooldownFill = document.getElementById('cooldownFill');
+    const cooldownText = document.getElementById('cooldownText');
+    const terminalBody = document.getElementById('terminalBody');
+    const hashValueEl = document.getElementById('hashValue');
+    const copyHashBtn = document.getElementById('copyHashBtn');
+    const statAttempts = document.getElementById('statAttempts');
+    const statFailures = document.getElementById('statFailures');
+    const statBlocked = document.getElementById('statBlocked');
+    const statSuccess = document.getElementById('statSuccess');
+    const wordlistInput = document.getElementById('wordlistInput');
+    const startBtn = document.getElementById('startAttackBtn');
+    const stopBtn = document.getElementById('stopAttackBtn');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const attackStatus = document.getElementById('attackStatus');
+
+    async function sha256(msg) {
+        const buf = new TextEncoder().encode(msg);
+        const hash = await crypto.subtle.digest('SHA-256', buf);
+        return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+
+    function log(msg) {
+        const d = document.createElement('div');
+        d.style.borderBottom = '1px solid #ffffff05';
+        d.textContent = msg;
+        terminalBody.appendChild(d);
+        terminalBody.scrollTop = terminalBody.scrollHeight;
+        const emptyLog = terminalBody.querySelector('.empty-log');
+        if (emptyLog) emptyLog.remove();
+    }
+
+    function toast(msg, type='success') {
+        const existing = document.querySelector('.toast');
+        if (existing) existing.remove();
+        const t = document.createElement('div');
+        t.className = 'toast ' + type;
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2600);
+    }
+
+    function flashScreen() {
+        const flash = document.createElement('div');
+        flash.className = 'flash-overlay';
+        document.body.appendChild(flash);
+        setTimeout(() => flash.remove(), 900);
+    }
+
+    function updateStats() {
+        statAttempts.textContent = attemptCount;
+        statFailures.textContent = failureCount;
+        statBlocked.textContent = blockCount;
+        statSuccess.textContent = isCracked ? '✅ YES' : '—';
+        statSuccess.style.color = isCracked ? '#00e676' : '';
+        statSuccess.style.fontSize = isCracked ? '1.4rem' : '';
+    }
+
+    function getCooldownDuration() {
+        const excess = Math.max(0, failureCount - config.rateLimitThreshold);
+        if (excess <= 0 && failureCount < config.rateLimitThreshold) return 0;
+        const mult = Math.min(excess+1, 5);
+        return Math.min(config.cooldownSeconds * mult, config.maxCooldown);
+    }
+
+    function startCooldown(sec) {
+        cooldownUntil = Date.now() + sec*1000;
+        cooldownBar.style.display = 'block';
+        cooldownText.style.display = 'block';
+        submitBtn.disabled = true;
+        passwordInput.disabled = true;
+        if (cooldownTimer) clearInterval(cooldownTimer);
+        cooldownTimer = setInterval(()=>{
+            const rem = Math.max(0, cooldownUntil - Date.now());
+            if (rem <= 0) {
+                clearInterval(cooldownTimer);
+                cooldownTimer = null;
+                cooldownUntil = null;
+                cooldownBar.style.display = 'none';
+                cooldownText.style.display = 'none';
+                submitBtn.disabled = false;
+                passwordInput.disabled = false;
+                passwordInput.focus();
+                return;
+            }
+            const total = getCooldownDuration()*1000 || 1;
+            const elapsed = total - rem;
+            cooldownFill.style.width = Math.min(100, (elapsed/total)*100)+'%';
+            cooldownText.textContent = `⏳ Rate limited — retry in ${Math.ceil(rem/1000)}s`;
+        }, 100);
+    }
+
+    function isInCooldown() { return cooldownUntil && Date.now() < cooldownUntil; }
+
+    async function attemptLogin(passwordAttempt) {
+        if (isCracked) return false;
+        if (isInCooldown()) {
+            const wait = Math.ceil((cooldownUntil - Date.now())/1000);
+            log(`[auto] Cooldown – waiting ${wait}s...`);
+            await new Promise(r=>setTimeout(r, wait*1000));
+        }
+        attemptCount++;
+        if (passwordAttempt === config.password) {
+            isCracked = true;
+            log(`[✅] CRACKED! Password = "${passwordAttempt}"`);
+            flashScreen();
+            toast('🎉 Password found!', 'success');
+            submitBtn.disabled = true;
+            passwordInput.disabled = true;
+            passwordInput.classList.add('success-glow');
+            updateStats();
+            return true;
+        }
+        failureCount++;
+        const cd = getCooldownDuration();
+        if (cd > 0 && failureCount >= config.rateLimitThreshold) {
+            blockCount++;
+            log(`[🚫] Rate limited (429) – cooldown ${cd}s`);
+            startCooldown(cd);
+            await new Promise(r=>setTimeout(r, cd*1000));
+        } else {
+            log(`[❌] Incorrect: "${passwordAttempt}"`);
+        }
+        updateStats();
+        return false;
+    }
+
+    async function resetState(newPassword) {
+        if (newPassword) config.password = newPassword;
+        attemptCount = failureCount = blockCount = 0;
+        isCracked = false;
+        cooldownUntil = null;
+        if (cooldownTimer) { clearInterval(cooldownTimer); cooldownTimer=null; }
+        cooldownBar.style.display='none'; cooldownText.style.display='none';
+        submitBtn.disabled=false; passwordInput.disabled=false;
+        passwordInput.value=''; passwordInput.classList.remove('success-glow','error-shake');
+        updateStats();
+        targetHash = await sha256(config.password);
+        hashValueEl.textContent = targetHash;
+        terminalBody.innerHTML = '<div class="empty-log">[System] Target reset. Ready.</div>';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const pw = passwordInput.value.trim();
+        if (!pw) return;
+        const success = await attemptLogin(pw);
+        if (!success) { passwordInput.value = ''; passwordInput.focus(); }
+    });
+    toggleBtn.addEventListener('click',()=>{
+        passwordInput.type = passwordInput.type==='password'?'text':'password';
+        toggleBtn.textContent = passwordInput.type==='password'?'👁':'🙈';
+    });
+    copyHashBtn.addEventListener('click',async ()=>{
+        await navigator.clipboard.writeText(targetHash);
+        copyHashBtn.textContent='✅ Copied!';
+        copyHashBtn.classList.add('copied');
+        setTimeout(()=>{ copyHashBtn.textContent='📋 Copy'; copyHashBtn.classList.remove('copied'); },1500);
+    });
+    document.getElementById('clearLogBtn').addEventListener('click',()=>{
+        terminalBody.innerHTML = '<div class="empty-log">[System] Log cleared.</div>';
+    });
+
+    diffBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const lvl = btn.dataset.level;
+            if (lvl === currentLevel && !isCracked) return;
+            currentLevel = lvl;
+            config = { ...DIFFICULTY_CONFIG[lvl], password: generatePassword(lvl) };
+            diffBtns.forEach(b => b.classList.remove('active','easy','medium','hard','expert'));
+            btn.classList.add('active', lvl);
+            resetState(config.password);
+            toast(`Difficulty set to ${config.label}`);
+        });
+    });
+    document.getElementById('randomizeBtn').addEventListener('click', ()=>{
+        config.password = generatePassword(currentLevel);
+        resetState(config.password);
+        toast('New random target generated');
+    });
+
+    const defaultWordlist = [
+        "123456","password","12345678","qwerty","123456789","12345","1234","111111","1234567",
+        "sunshine","qwerty123","iloveyou","princess","admin","welcome","666666","abc123",
+        "football","123123","monkey","654321","!@#$%^&*","charlie","aa123456","donald",
+        "password1","qwerty12345","1234567890","123456789a","superman","qazwsx","michael",
+        "baseball","dragon","ashley","bailey","shadow","121212","flower","hottie","loveme",
+        "zaq1zaq1","admin123","passw0rd","master","login","starwars","trustno1","solo",
+        "letmein","welcome1","changeme","secret","summer","joshua","biteme","computer",
+        "access","987654321","picture","ginger","robert","batman","hunter","thomas",
+        "buster","george","andrew","jessica","pepper","1qaz2wsx","josh","maggie",
+        "matthew","chocolate","pass123","zxcvbnm","love","killer","iloveyou!","chelsea",
+        "hello","mynoob","1212","test","qwerty1234","pass","zxcvbnm123","qwertyuiop",
+        "google","tigger","cookie","naruto","kawasaki","abc12345","jasper","banana",
+        "chelsea1","ronaldo","pokemon","qwe123","qwerty1","samuel","diamond","letmein1",
+        "hello123","11111111","anthony","steelers","angela","jordan","jennifer",
+        "mercedes","andrea","benjamin","qwert","asdfgh","11111","159753","asdfghjkl",
+        "fuckyou","buster1","hunter1","amanda","banana1","cheese","summer1","rangers",
+        "midnight","charlie1","cookie1","mickey","tigger1","love123","gateway","monkey1"
+    ];
+
+    function getWordlist() {
+        const raw = wordlistInput.value.trim();
+        if (raw) return raw.split('\n').map(s=>s.trim()).filter(Boolean);
+        return [...defaultWordlist];
+    }
+
+    let attackRunning = false;
+
+    async function runAttack() {
+        if (attackRunning) return;
+        attackRunning = true;
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        attackStatus.textContent = 'Attacking...';
+        const words = getWordlist();
+        const total = words.length;
+        progressText.textContent = `0 / ${total}`;
+        progressFill.style.width = '0%';
+        let found = false;
+        for (let i=0; i<total; i++) {
+            if (!attackRunning) break;
+            const pw = words[i];
+            progressText.textContent = `${i+1} / ${total}`;
+            progressFill.style.width = ((i+1)/total*100)+'%';
+            attackStatus.textContent = `Trying: "${pw}"`;
+            found = await attemptLogin(pw);
+            if (found) {
+                attackStatus.textContent = `✅ CRACKED! Password = "${pw}"`;
+                break;
+            }
+            await new Promise(r => setTimeout(r, 30));
+        }
+        if (!found && attackRunning) attackStatus.textContent = '❌ Wordlist exhausted – not found.';
+        attackRunning = false;
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+    }
+
+    startBtn.addEventListener('click', runAttack);
+    stopBtn.addEventListener('click', ()=>{
+        attackRunning = false;
+        attackStatus.textContent = 'Attack stopped.';
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+    });
+
+    (async function init(){
+        config.password = generatePassword(currentLevel);
+        targetHash = await sha256(config.password);
+        hashValueEl.textContent = targetHash;
+        updateStats();
+        wordlistInput.placeholder = defaultWordlist.slice(0,5).join('\n') + '\n...';
+        log('[System] Lab ready. Use manual or automatic brute‑force.');
+    })();
+})();
+</script>
+</body>
+</html>
